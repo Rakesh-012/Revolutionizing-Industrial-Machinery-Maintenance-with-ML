@@ -1,7 +1,5 @@
 # Revolutionizing Industrial Machinery Maintenance with ML
 
-![Python](https://img.shields.io/badge/Python-3.11-blue) ![License](https://img.shields.io/badge/License-MIT-green) ![Build](https://img.shields.io/badge/Status-Complete-brightgreen)
-
 A machine learning project for **predictive maintenance** in industrial machinery. By analyzing sensor data, this system predicts equipment operational states across multiple failure types, reducing downtime, optimizing maintenance schedules, and improving efficiency.
 
 The project includes a **Flask web interface** and a **chatbot for feature explanations**, making it user-friendly for industrial applications.
@@ -132,10 +130,10 @@ Open browser: `http://127.0.0.1:5000/`
 ## Web Interface Preview
 
 **Input & Prediction Page / Chatbot for Feature Understanding**  
-![Input & Prediction Page]<img width="2000" height="1125" alt="image" src="https://github.com/user-attachments/assets/4c8612e4-11fc-4a27-80d7-90ae8c81853f" />
+<img width="2000" height="1125" alt="image" src="https://github.com/user-attachments/assets/4c8612e4-11fc-4a27-80d7-90ae8c81853f" />
 
 **Model Prediction Output**  
-![Prediction Output]<img width="2000" height="1125" alt="image" src="https://github.com/user-attachments/assets/9d62f68a-d993-4013-a43d-9717ba1ea369" />
+<img width="2000" height="1125" alt="image" src="https://github.com/user-attachments/assets/9d62f68a-d993-4013-a43d-9717ba1ea369" />
 
 ---
 
