@@ -130,12 +130,9 @@ Open browser: `http://127.0.0.1:5000/`
 ## Web Interface Preview
 
 **Input & Prediction Page / Chatbot for Feature Understanding**  
-
 <img width="2000" height="1125" alt="image" src="https://github.com/user-attachments/assets/4c8612e4-11fc-4a27-80d7-90ae8c81853f" />
 
-
 **Model Prediction Output**  
-
 <img width="2000" height="1125" alt="image" src="https://github.com/user-attachments/assets/9d62f68a-d993-4013-a43d-9717ba1ea369" />
 
 ---
