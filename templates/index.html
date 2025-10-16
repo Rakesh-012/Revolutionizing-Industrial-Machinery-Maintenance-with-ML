@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Machine Failure Prediction & Chat Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #a6d0e4 !important;
+            background-size: cover;
+            background-attachment: fixed;
+            background-blend-mode: darken;
+            color: #000;
+        }
+
+        .glass-card {
+            background: #fff;
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-radius: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .glass-chatbox {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 0.75rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.2);
+        }
+
+        h1,
+        h2,
+        h3 {
+            color: #000;
+        }
+
+        label {
+            color: #111;
+        }
+
+        .form-input,
+        .form-select {
+            background: rgba(241, 245, 249, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.9);
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            color: #333;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .form-input::placeholder {
+            color: #64748B;
+        }
+
+        .form-input:focus,
+        .form-select:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0, 188, 212, 0.5);
+            border-color: #2563EB;
+            background: rgba(241, 245, 249, 1);
+        }
+
+        .prediction-result {
+            margin-top: 1.5rem;
+            padding: 1rem 1.5rem;
+            border-radius: 0.75rem;
+            font-size: 1.125rem;
+            font-weight: 600;
+            text-align: center;
+            border: 1px solid transparent;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+        }
+
+        .prediction-success {
+            background-color: rgb(230, 227, 227);
+            color: #000;
+            border-color: rgb(230, 227, 227);
+        }
+
+        .prediction-error {
+            background-color: rgb(230, 227, 227);
+            color: #000;
+            border-color: rgb(230, 227, 227);
+        }
+
+        .shap-explanation-box {
+            margin-top: 1.5rem;
+            padding: 1rem 1.5rem;
+            border-radius: 0.75rem;
+            background: rgb(230, 227, 227);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            border: 1px solid rgb(230, 227, 227);
+            box-shadow: 0 4px 15px 0 rgba(0, 0, 0, 0.1);
+            color: #F1F5F9;
+        }
+
+        .shap-explanation-box h3 {
+            color: #000;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+        }
+
+        .shap-error-box {
+            margin-top: 1.5rem;
+            padding: 1rem 1.5rem;
+            border-radius: 0.75rem;
+            background-color: rgb(230, 227, 227);
+            color: rgb(230, 227, 227);
+            border: 1px solidrgb(230, 227, 227);
+            text-align: center;
+            font-weight: 500;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+        }
+
+        .chat-bubble {
+            max-width: 80%;
+            padding: 0.6rem 1rem;
+            border-radius: 0.75rem;
+            word-wrap: break-word;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .chat-bubble-user {
+            background-color: #2563EB;
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 0.25rem;
+        }
+
+        .chat-bubble-bot {
+            background-color: rgba(255, 255, 255, 0.8);
+            color: #0F172A;
+            margin-right: auto;
+            border-bottom-left-radius: 0.25rem;
+            border: 1px solid rgba(229, 231, 235, 0.8);
+        }
+
+        .chat-input {
+            background: rgba(241, 245, 249, 0.9);
+            border: 1px solid rgba(209, 213, 219, 0.8);
+            color: #0F172A;
+        }
+
+        .chat-input::placeholder {
+            color: #64748B;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(0, 188, 212, 0.4);
+            border-color: #2563EB;
+        }
+
+        #chatbox-send {
+            background-color: #2563EB;
+        }
+
+        #chatbox-send:hover {
+            background-color: #1E3A8A;
+        }
+
+        #chatbox-send:focus {
+            box-shadow: 0 0 0 2px rgba(0, 188, 212, 0.5);
+            border-color: #2563EB;
+            outline: none;
+        }
+
+        #chatbox-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #chatbox-messages::-webkit-scrollbar-track {
+            background: rgba(229, 231, 235, 0.1);
+            border-radius: 10px;
+        }
+
+        #chatbox-messages::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+
+        #chatbox-messages::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        .tip-box {
+            background: rgb(230, 227, 227);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 0.75rem;
+            padding: 1rem 1.5rem;
+            height: fit-content;
+            color: #F1F5F9;
+        }
+
+        .tip-box h3 {
+            color: #000;
+            font-size:20px;
+            font-weight: 800;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .tip-box ul {
+            list-style: none;
+            padding-left: 0;
+            font-size: 0.875rem;
+            line-height: 1.5;
+            font-weight: 400px;
+        }
+
+        .tip-box li {
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+
+        .tip-box strong {
+            color: #222;
+            font-size:15px;
+            font-weight: 600;
+        }
+
+        .tip-box .good {
+            color: #111;
+            font-weight: 500;
+        }
+
+        .tip-box .warning {
+            color: #111;
+            font-weight: 500;
+        }
+
+        .tip-box .danger {
+            color: #000;
+            font-weight: 500;
+        }
+
+        .tip-icon {
+            width: 1.25rem;
+            height: 1.25rem;
+            margin-right: 0.5rem;
+            color: gold;
+        }
+
+        #shapChart {
+            background-color: rgba(30, 41, 59, 0.8);
+            border-radius: 0.5rem;
+            padding: 0.5rem;
+            color: #F1F5F9;
+        }
+
+        .predict-button-gradient {
+            background-image: linear-gradient(to right, #2563EB, #1E3A8A);
+        }
+
+        .predict-button-gradient:hover {
+            background-image: linear-gradient(to right, #1E3A8A, #2563EB);
+        }
+
+        .chatbox-header-gradient {
+            background-image: linear-gradient(to right, #2563EB, #1E3A8A);
+        }
+
+        .chatbox-toggle-gradient {
+            background-image: linear-gradient(to right, #2563EB, #1E3A8A);
+        }
+
+        .chatbox-toggle-gradient:hover {
+            background-image: linear-gradient(to right, #1E3A8A, #2563EB);
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex items-center justify-center p-4 relative">
+
+    <div class="glass-card p-8 md:p-12 shadow-xl rounded-2xl w-full max-w-6xl z-10">
+        <h1 class="text-4xl md:text-5xl font-extrabold text-center mb-4 leading-tight">
+            Machine Failure Prediction
+        </h1>
+        <p class="text-center text-slate-400 max-w-2xl mx-auto mb-10">
+            Enter machine parameters to predict potential failures, or ask the Chat Assistant for help.
+        </p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+
+            <div class="tip-box">
+                <h3>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="tip-icon" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor" stroke-width="3">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
+                    Parameter Insights & Ranges
+                </h3>
+                <ul>
+                    <li><strong>Machine Type:</strong> Influences overall reliability. <span class="good">(L, M,
+                            H)</span> - Select the correct type.</li>
+                    <li><strong>Air Temperature [K]:</strong> Ambient temp. Affects cooling. Normal range: <span
+                            class="good">~295-305 K</span>. Extremes <span class="warning">(&lt;293 K</span> or <span
+                            class="danger">>308 K)</span> can be problematic.</li>
+                    <li><strong>Process Temperature [K]:</strong> Temp during operation. Should be slightly above Air
+                        Temp. Large difference <span class="danger">(10-12 K)</span> may indicate <span
+                            class="danger">Heat Dissipation</span> risk.</li>
+                    <li><strong>Rotational Speed [rpm]:</strong> Spindle speed. Typical: <span class="good">~1300-2500
+                            rpm</span>. Very low speed with high torque <span class="danger">(&lt;1250 rpm)</span> hints
+                        at <span class="danger">Power Failure</span> risk.</li>
+                    <li><strong>Torque [Nm]:</strong> Rotational force. Normal: <span class="good">~10-60 Nm</span>.
+                        High torque <span class="warning">(55 Nm)</span> + High Wear suggests <span
+                            class="danger">Overstrain</span> risk. High torque + Low Speed suggests <span
+                            class="danger">Power Failure</span> risk.</li>
+                    <li><strong>Tool Wear [min]:</strong> Tool usage time. Starts at 0. High values <span
+                            class="warning">(180 min</span>, <span class="danger">>220 min)</span> significantly
+                        increase <span class="danger">Tool Wear</span> & <span class="danger">Overstrain</span> failure
+                        risk.</li>
+                </ul>
+            </div>
+
+            <form action="{{ url_for('predict') }}" method="post" class="space-y-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="Type" class="block text-sm font-medium mb-1">Machine Type</label>
+                        <select id="Type" name="Type" required class="form-select mt-2 block w-full sm:text-sm">
+                            <option value="L" {% if form_data and form_data.Type=='L' %}selected{% endif %}>Low Quality
+                                (L)</option>
+                            <option value="M" {% if form_data and form_data.Type=='M' %}selected{% endif %}>Medium
+                                Quality (M)</option>
+                            <option value="H" {% if form_data and form_data.Type=='H' %}selected{% endif %}>High Quality
+                                (H)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="Air_temperature_K" class="block text-sm font-medium mb-1">Air Temperature
+                            (K)</label>
+                        <input type="number" step="any" id="Air_temperature_K" name="Air temperature [K]" required
+                            placeholder="e.g., 298.1" class="form-input mt-2 block w-full sm:text-sm"
+                            value="{{ form_data['Air temperature [K]'] if form_data and 'Air temperature [K]' in form_data else '' }}">
+                    </div>
+
+                    <div>
+                        <label for="Process_temperature_K" class="block text-sm font-medium mb-1">Process Temperature
+                            (K)</label>
+                        <input type="number" step="any" id="Process_temperature_K" name="Process temperature [K]"
+                            required placeholder="e.g., 308.6" class="form-input mt-2 block w-full sm:text-sm"
+                            value="{{ form_data['Process temperature [K]'] if form_data and 'Process temperature [K]' in form_data else '' }}">
+                    </div>
+
+                    <div>
+                        <label for="Rotational_speed_rpm" class="block text-sm font-medium mb-1">Rotational Speed
+                            (rpm)</label>
+                        <input type="number" step="any" id="Rotational_speed_rpm" name="Rotational speed [rpm]" required
+                            placeholder="e.g., 1551" class="form-input mt-2 block w-full sm:text-sm"
+                            value="{{ form_data['Rotational speed [rpm]'] if form_data and 'Rotational speed [rpm]' in form_data else '' }}">
+                    </div>
+
+                    <div>
+                        <label for="Torque_Nm" class="block text-sm font-medium mb-1">Torque (Nm)</label>
+                        <input type="number" step="any" id="Torque_Nm" name="Torque [Nm]" required
+                            placeholder="e.g., 42.8" class="form-input mt-2 block w-full sm:text-sm"
+                            value="{{ form_data['Torque [Nm]'] if form_data and 'Torque [Nm]' in form_data else '' }}">
+                    </div>
+
+                    <div>
+                        <label for="Tool_wear_min" class="block text-sm font-medium mb-1">Tool Wear (min)</label>
+                        <input type="number" step="any" id="Tool_wear_min" name="Tool wear [min]" required
+                            placeholder="e.g., 0" class="form-input mt-2 block w-full sm:text-sm"
+                            value="{{ form_data['Tool wear [min]'] if form_data and 'Tool wear [min]' in form_data else '' }}">
+                    </div>
+
+                </div>
+                <div class="pt-2">
+                    <button type="submit"
+                        class="w-full flex justify-center py-2 px-4 border border-transparent rounded-xl shadow-lg hover:shadow-2xl text-base font-semibold text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-indigo-500 transition duration-150 ease-in-out transform hover:scale-105 predict-button-gradient">
+                        Predict Failure
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="mt-6 w-full max-w-3xl mx-auto">
+            {% if prediction_text %}
+            <div class="prediction-result {% if error %}prediction-error{% else %}prediction-success{% endif %}">
+                {{ prediction_text }}
+            </div>
+
+            {% if shap_values and shap_features and shap_values != 'None' and shap_features != 'None' %}
+            <div class="shap-explanation-box">
+                <h3 class="text-lg font-semibold text-center mb-3 ">Prediction Explanation (Feature Importance)</h3>
+                <div style="position: relative; height:250px; width:100%;">
+                    <canvas id="shapChart"></canvas>
+                </div>
+            </div>
+            {% elif shap_error %}
+            <div class="shap-error-box">
+                {{ shap_error }}
+            </div>
+            {% endif %}
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="fixed bottom-5 right-5 z-50 flex flex-col items-end">
+        <div id="chatbox"
+            class="hidden mb-2 w-80 max-w-sm glass-chatbox flex flex-col transition-all duration-300 ease-in-out">
+            <div class="chatbox-header-gradient text-white p-3 flex justify-between items-center rounded-t-lg">
+                <h3 class="font-semibold text-lg" style="color: inherit;">Chat Assistant</h3>
+                <button id="close-chatbox" class="text-indigo-100 hover:text-white transition duration-150">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div id="chatbox-messages" class="flex-1 p-5 space-y-4 text-sm leading-relaxed overflow-y-auto max-h-96 ">
+                <div class="chat-bubble chat-bubble-bot">
+                    Hi there! How can I help you understand the prediction parameters or failure types?
+                </div>
+            </div>
+            <div class="p-4 border-t border-gray-200/50 flex">
+                <input type="text" id="chatbox-input" placeholder="Ask about parameters..."
+                    class="chat-input flex-1 px-3 py-2 rounded-l-md focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                <button id="chatbox-send"
+                    class="text-white px-5 py-2.5 font-medium rounded-r-md focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-offset-gray-800 focus:ring-indigo-500 transition duration-150 ease-in-out">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path
+                            d="M10.894 2.553a1 1 0 00-1.789 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <button id="chatbox-toggle"
+            class="rounded-full p-4 shadow-xl hover:scale-110 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-indigo-500 transition duration-150 ease-in-out transform hover:scale-110 chatbox-toggle-gradient text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+        </button>
+    </div>
+
+    <script>
+        const chatbox = document.getElementById('chatbox');
+        const chatboxToggle = document.getElementById('chatbox-toggle');
+        const closeChatbox = document.getElementById('close-chatbox');
+        const chatboxMessages = document.getElementById('chatbox-messages');
+        const chatboxInput = document.getElementById('chatbox-input');
+        const chatboxSend = document.getElementById('chatbox-send');
+
+        chatboxToggle.addEventListener('click', () => {
+            chatbox.classList.remove('hidden');
+            chatbox.classList.add('flex');
+            chatboxToggle.classList.add('hidden');
+            if (!chatbox.classList.contains('hidden')) {
+                setTimeout(() => chatboxInput.focus(), 100);
+            }
+        });
+
+        closeChatbox.addEventListener('click', () => {
+            chatbox.classList.add('hidden');
+            chatbox.classList.remove('flex');
+            chatboxToggle.classList.remove('hidden');
+        });
+
+        function addMessage(message, sender) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('chat-bubble', sender === 'user' ? 'chat-bubble-user' : 'chat-bubble-bot');
+            messageElement.textContent = message; 
+            chatboxMessages.appendChild(messageElement);
+            chatboxMessages.scrollTop = chatboxMessages.scrollHeight; 
+        }
+
+        function sendMessage() {
+            const messageText = chatboxInput.value.trim();
+            if (messageText === '') return;
+
+            addMessage(messageText, 'user');
+            chatboxInput.value = '';
+
+            const thinkingElement = document.createElement('div');
+            thinkingElement.classList.add('chat-bubble', 'chat-bubble-bot', 'italic');
+            thinkingElement.style.color = '#9CA3AF'; 
+            thinkingElement.textContent = 'Thinking...';
+            thinkingElement.id = 'thinking-indicator';
+            chatboxMessages.appendChild(thinkingElement);
+            chatboxMessages.scrollTop = chatboxMessages.scrollHeight;
+
+            fetch('/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ message: messageText }),
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const thinkingIndicator = document.getElementById('thinking-indicator');
+                    if (thinkingIndicator) {
+                        chatboxMessages.removeChild(thinkingIndicator);
+                    }
+                    addMessage(data.reply || "Sorry, I couldn't process that.", 'bot');
+                })
+                .catch(error => {
+                    console.error('Error sending/receiving chat message:', error);
+                    const thinkingIndicator = document.getElementById('thinking-indicator');
+                    if (thinkingIndicator) {
+                        chatboxMessages.removeChild(thinkingIndicator);
+                    }
+                    addMessage("Sorry, there was an error connecting. Please try again.", 'bot');
+                });
+        }
+
+        chatboxSend.addEventListener('click', sendMessage);
+        chatboxInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                sendMessage();
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', (event) => {
+            const shapValuesData = '{{ shap_values | safe if shap_values and shap_values != 'None' else '' }}';
+            const shapFeaturesData = '{{ shap_features | safe if shap_features and shap_features != 'None' else '' }}';
+
+            if (shapValuesData && shapFeaturesData) {
+                try {
+                    const shapValues = JSON.parse(shapValuesData);
+                    const featureNames = JSON.parse(shapFeaturesData);
+                    const canvasElement = document.getElementById('shapChart'); 
+
+                    if (!canvasElement) {
+                        console.error("SHAP chart canvas element not found!");
+                        return; 
+                    }
+
+                    if (!Array.isArray(shapValues) || !Array.isArray(featureNames) || shapValues.length !== featureNames.length || shapValues.length === 0) {
+                        console.error("Invalid or empty SHAP data received. SHAP Values:", shapValues, "Feature Names:", featureNames);
+                        const chartParent = canvasElement.parentElement;
+                        if (chartParent) {
+                            chartParent.innerHTML = "<p class='text-center' style='color: #F1F5F9;'>Could not display explanation chart due to invalid data structure.</p>";
+                        }
+                        return;
+                    }
+
+
+                    const sortedIndices = shapValues.map((value, index) => ({ value: Math.abs(value), index }))
+                        .sort((a, b) => b.value - a.value)
+                        .map(data => data.index);
+
+                    const sortedShapValues = sortedIndices.map(index => shapValues[index]);
+                    const sortedFeatureNames = sortedIndices.map(index => featureNames[index]);
+
+                    const ctx = canvasElement.getContext('2d');
+
+                    const textColor = '#F1F5F9'; 
+
+                    window.myShapChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: sortedFeatureNames,
+                            datasets: [{
+                                label: 'SHAP Value (Impact on Prediction)',
+                                data: sortedShapValues,
+                                backgroundColor: sortedShapValues.map(value => value > 0 ? 'rgba(250, 128, 114, 0.8)' : 'rgba(144, 238, 144, 0.8)'), 
+                                borderColor: sortedShapValues.map(value => value > 0 ? '#EF4444' : '#10B981'),  
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            indexAxis: 'y', 
+                            scales: {
+                                x: {
+                                    beginAtZero: false, 
+                                    title: {
+                                        display: true,
+                                        text: 'SHAP Value Contribution',
+                                        color: textColor 
+                                    },
+                                    ticks: { color: textColor }, 
+                                    grid: {
+                                        color: 'rgba(255, 255, 255, 0.1)' 
+                                    }
+                                },
+                                y: {
+                                    ticks: {
+                                        color: textColor,
+                                        autoSkip: false 
+                                    },
+                                    grid: {
+                                        display: false 
+                                    }
+                                }
+                            },
+                            plugins: {
+                                legend: { display: false }, 
+                                tooltip: {
+                                    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                                    titleColor: '#FFFFFF', 
+                                    bodyColor: '#FFFFFF', 
+                                    callbacks: {
+                                        label: function (context) {
+                                            let label = context.dataset.label || '';
+                                            if (label) { label += ': '; }
+                                            if (context.parsed.x !== null) {
+                                                label += context.parsed.x.toFixed(4);
+                                            }
+                                            label += (context.parsed.x > 0 ? ' (Increases failure likelihood)' : ' (Decreases failure likelihood)');
+                                            return label;
+                                        }
+                                    }
+                                }
+                            },
+                            responsive: true,
+                            maintainAspectRatio: false 
+                        }
+                    });
+                } catch (e) {
+                    console.error("Error parsing SHAP data or creating chart:", e);
+                    const chartCanvas = document.getElementById('shapChart');
+                    if (chartCanvas) {
+                        const chartParent = chartCanvas.parentElement;
+                        if (chartParent) {
+                            chartParent.innerHTML = "<p class='text-center' style='color: #EF4444;'>Error displaying explanation chart. Check console for details.</p>";
+                        }
+                    }
+                }
+            } else {
+                console.log("SHAP data not available for rendering chart. Check server logs or if explainer was initialized.");
+                
+            }
+        }); 
+
+
+    </script>
+
+</body>
+
+</html>
