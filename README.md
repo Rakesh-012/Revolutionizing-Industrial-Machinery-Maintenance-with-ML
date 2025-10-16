@@ -120,7 +120,7 @@ pip install -r requirements.txt
 ## Running the Application
 
 ```bash
-python predictive_maintenance/app.py
+python app.py
 ```
 
 Open browser: `http://127.0.0.1:5000/`
